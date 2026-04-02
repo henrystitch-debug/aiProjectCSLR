@@ -21,6 +21,7 @@ import utils
 from modules.sync_batchnorm import convert_model
 from seq_scripts import seq_train, seq_eval, seq_feature_generation
 from torch.cuda.amp import autocast as autocast
+torch.backends.cudnn.enabled = False
 
 class Processor():
     def __init__(self, arg):

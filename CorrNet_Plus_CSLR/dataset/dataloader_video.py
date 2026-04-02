@@ -47,12 +47,17 @@ class BaseFeeder(data.Dataset):
         self.data_aug = self.transform()
         print("")
 
+    
     def __getitem__(self, idx):
         if self.data_type == "video":
-            input_data, label, fi = self.read_video(idx)
-            input_data, label = self.normalize(input_data, label)
-            # input_data, label = self.normalize(input_data, label, fi['fileid'])
-            return input_data, torch.LongTensor(label), self.inputs_list[idx]['original_info']
+            try:
+                input_data, label, fi = self.read_video(idx)
+                if len(input_data) == 0:
+                    return self.__getitem__((idx + 1) % len(self))
+                input_data, label = self.normalize(input_data, label)
+                return input_data, torch.LongTensor(label), self.inputs_list[idx]['original_info']
+            except (IndexError, Exception) as e:
+                return self.__getitem__((idx + 1) % len(self))
         elif self.data_type == "lmdb":
             input_data, label, fi = self.read_lmdb(idx)
             input_data, label = self.normalize(input_data, label)
@@ -72,6 +77,11 @@ class BaseFeeder(data.Dataset):
             img_folder = os.path.join(self.prefix, fi['folder'])
         img_list = sorted(glob.glob(img_folder))
         img_list = img_list[int(torch.randint(0, self.frame_interval, [1]))::self.frame_interval]
+        if len(img_list) == 0:
+            print(f"WARNING: Empty img_list for folder: {img_folder}")
+            print(f"Glob pattern: {img_folder}")
+            raise ValueError(f"Empty image list for sample: {img_folder}")
+
         label_list = []
         for phase in fi['label'].split(" "):
             if phase == '':
