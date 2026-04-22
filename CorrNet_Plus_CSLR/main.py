@@ -172,6 +172,16 @@ class Processor():
     def loading(self):
         self.device.set_device(self.arg.device)
         print("Loading model")
+        # propagate correlation hyperparameters from top-level config into model args
+        # so models using Get_Correlation receive neighbors and aggregation mode automatically
+        corr_neighbors = getattr(self.arg, 'neighbors', None)
+        if corr_neighbors is not None:
+            self.arg.model_args['corr_neighbors'] = corr_neighbors
+        corr_agg_mode = getattr(self.arg, 'corr_agg_mode', None)
+        if corr_agg_mode is None:
+            corr_agg_mode = 'concat_conv'
+        self.arg.model_args['corr_agg_mode'] = corr_agg_mode
+
         model_class = import_class(self.arg.model)
         model = model_class(
             **self.arg.model_args,

@@ -102,13 +102,14 @@ class Temporal_weighting(nn.Module):
         return x*(F.sigmoid(out.unsqueeze(-1).unsqueeze(-1))-0.5) * self.alpha
 
 class Get_Correlation(nn.Module):
-    def __init__(self, channels, neighbors=3):
+    def __init__(self, channels, neighbors=3, agg_mode='concat_conv'):
         super().__init__()
         reduction_channel = channels//16
 
         self.down_conv2 = nn.Conv3d(channels, channels, kernel_size=1, bias=False)
         self.neighbors = neighbors
         self.clusters = 1
+        # used for learnable weighted-sum aggregation across neighbor positions
         self.weights2 = nn.Parameter(torch.ones(self.neighbors*2) / (self.neighbors*2), requires_grad=True)
         self.unfold = UnfoldTemporalWindows(2*self.neighbors+1)
         self.weights3 = nn.Parameter(torch.ones(3) / 3, requires_grad=True)
@@ -126,20 +127,106 @@ class Get_Correlation(nn.Module):
         self.weights = nn.Parameter(torch.ones(3) / 3, requires_grad=True)
         self.conv_back = nn.Conv3d(reduction_channel, channels, kernel_size=1, bias=False)
 
+        # aggregation mode for multi-frame correlation maps
+        # 'weighted' = learnable weighted sum across reference frames (Option B)
+        # 'concat_conv' = concatenate affinities and apply a 1x1 conv (Option A)
+        self.agg_mode = agg_mode
+        if self.agg_mode == 'concat_conv':
+            # conv across the neighbor dimension L (=2*neighbors)
+            # use kernel_size equal to L to collapse the neighbor dimension
+            self.agg_conv = nn.Conv1d(in_channels=1, out_channels=1, kernel_size=2*self.neighbors, bias=False)
+
     def forward(self, x, return_affinity=False):
         N, C, T, H, W = x.shape
-        def clustering(query, key):
-            affinities = torch.einsum('bctp,bctl->btpl', query, key)
-            return torch.einsum('bctl,btpl->bctp', key, F.sigmoid(affinities)-0.5), affinities
+
+        # compute a validity mask that indicates which neighbor positions correspond to real frames
+        # this lets us "use only available frames and normalize the aggregation weights" at boundaries
+        ones = torch.ones((N, 1, T, H, W), dtype=x.dtype, device=x.device)
+        mask_unfold = self.unfold(ones)  # N,1,T,window_size,H,W
+        mask_concat = torch.concat([mask_unfold[:,:,:,:self.neighbors], mask_unfold[:,:,:,self.neighbors+1:]], 3)  # N,1,T,2*neighbors,H,W
+        # sum over spatial dims to detect whether that neighbor position existed for each (N,T,neighbor)
+        mask_sum = mask_concat.sum(dim=(4,5))  # N,1,T,2*neighbors
+        valid_indicator = (mask_sum > 0).float()  # 1 if available, 0 if out-of-bounds
 
         x_mean = x.mean(3, keepdim=True).mean(4, keepdim=False)
         x_max = x.max(-1, keepdim=False)[0].max(-1, keepdim=True)[0]
         x_att = self.attpool(x) #NCTP
         x2 = self.down_conv2(x)
-        upfold = self.unfold(x2)
-        upfold = (torch.concat([upfold[:,:,:,:self.neighbors], upfold[:,:,:,self.neighbors+1:]],3)* self.weights2.view(1, 1, 1, -1, 1, 1)).view(N, C, T, -1) #NCT(SHW)
+        upfold = self.unfold(x2)  # N,C,T,window_size,H,W
+        # remove center frame from window to form reference set of length L=2*neighbors
+        upfold = torch.concat([upfold[:,:,:,:self.neighbors], upfold[:,:,:,self.neighbors+1:]],3)  # N,C,T,L,H,W
+
+        # apply per-neighbor learnable weight template but mask and renormalize to only available frames
+        L = 2 * self.neighbors
+        # expand the template weights to broadcast shape (N,1,T,L)
+        template_w = self.weights2.view(1, 1, 1, L)
+        valid = valid_indicator  # N,1,T,L
+        # zero out template where invalid and renormalize across neighbors per (N,T)
+        weighted = template_w * valid  # N,1,T,L
+        denom = weighted.sum(dim=-1, keepdim=True)  # N,1,T,1
+        denom = denom + 1e-6
+        norm_w = weighted / denom  # N,1,T,L
+
+        # flatten spatial dims for efficient einsum usage later: produce key of shape (N,C,T,L)
+        upfold = upfold.view(N, C, T, L, H, W).contiguous()  # already in this shape but ensure
+        # aggregate spatially (sum) so key reflects neighbor-frame level features (consistent with earlier behavior)
+        key = upfold.sum(dim=(4,5))  # N,C,T,L
+
         x_mean = x_mean*self.weights4[0] + x_max*self.weights4[1] + x_att*self.weights4[2]
-        x_mean, affinities = clustering(x_mean, upfold)
+
+        # clustering / correlation computation
+        # query: x_mean -> (N, C, T, P) (P==self.clusters)
+        # key: key -> (N, C, T, L)  where L == 2*self.neighbors
+        def clustering(query, key):
+            # raw affinities: (N, T, P, L)
+            affinities = torch.einsum('bctp,bctl->btpl', query, key)
+            aff = F.sigmoid(affinities) - 0.5  # range [-0.5, 0.5]
+
+            # apply validity mask to affinities so out-of-bounds positions do not contribute
+            # valid_indicator: N,1,T,L -> reshape to N,T,1,L to match aff
+            valid_perm = valid_indicator.squeeze(1).unsqueeze(2)  # N,T,1,L
+            aff = aff * valid_perm  # zero-out invalid
+
+            if self.agg_mode == 'weighted':
+                # norm_w: N,1,T,L -> reshape to N,T,1,L for affinity weighting and N,1,T,L for key weighting
+                w_aff = norm_w.squeeze(1).unsqueeze(2)  # N,T,1,L
+                w_key = norm_w.unsqueeze(1)  # N,1,T,L
+                # aggregate key across L with learned & normalized weights -> (N, C, T)
+                key_sum = (key * w_key).sum(-1)
+                # aggregate affinity across L into a scalar per (N,T,P)
+                aff_sum = (aff * w_aff).sum(-1)
+                # produce output features: (N, C, T, P)
+                out = key_sum.unsqueeze(-1) * aff_sum.unsqueeze(1)
+                return out, affinities
+
+            elif self.agg_mode == 'concat_conv':
+                # aff shape -> (N, T, P, L)
+                B, Tt, P, L = aff.shape
+                # prepare affinity and mask tensors for Conv1d: (B*T*P, 1, L)
+                aff_reshaped = aff.reshape(B*Tt*P, 1, L)
+                mask_r = valid_indicator.squeeze(1)  # N,T,L
+                mask_exp = mask_r.unsqueeze(2).repeat(1,1,P,1)  # N,T,P,L
+                mask_reshaped = mask_exp.reshape(B*Tt*P, 1, L)
+                # zero-out invalid positions (already zeroed in aff, but ensure mask used for normalization)
+                aff_reshaped = aff_reshaped * mask_reshaped
+                # apply 1D conv across neighbor dimension to aggregate -> (B*T*P,1,1)
+                agg = self.agg_conv(aff_reshaped)  # (B*T*P,1,1)
+                # normalize by number of available neighbors for that (N,T) to avoid bias from padding
+                denom = mask_reshaped.sum(dim=2, keepdim=True)  # (B*T*P,1,1)
+                denom = denom + 1e-6
+                agg = agg / denom
+                agg = agg.view(B, Tt, P, 1)  # (N, T, P, 1)
+                # simple key aggregation: weighted sum using normalized template weights
+                key_sum = (key * norm_w.unsqueeze(1)).sum(-1)  # (N, C, T)
+                out = key_sum.unsqueeze(-1) * agg.unsqueeze(1)  # (N, C, T, P)
+                return out, affinities
+
+            else:
+                # fallback to original behaviour: use affinities to weight key directly
+                out = torch.einsum('bctl,btpl->bctp', key, aff)
+                return out, affinities
+
+        x_mean, affinities = clustering(x_mean, key)
         features = x_mean.view(N, C, T, self.clusters, 1)
 
         x_down = self.down_conv(x)
@@ -196,7 +283,7 @@ class BasicBlock(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000):
+    def __init__(self, block, layers, num_classes=1000, corr_neighbors=3, corr_agg_mode='concat_conv'):
         self.inplanes = 64
         super(ResNet, self).__init__()
         self.conv1 = nn.Conv3d(3, 64, kernel_size=(1,7,7), stride=(1,2,2), padding=(0,3,3),
@@ -206,13 +293,14 @@ class ResNet(nn.Module):
         self.maxpool = nn.MaxPool3d(kernel_size=(1,3,3), stride=(1,2,2), padding=(0,1,1))
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.corr2 = Get_Correlation(self.inplanes, neighbors=1)
+        # use corr_neighbors and corr_agg_mode from config/kwargs
+        self.corr2 = Get_Correlation(self.inplanes, neighbors=corr_neighbors, agg_mode=corr_agg_mode)
         self.temporal_weight2 = Temporal_weighting(self.inplanes)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.corr3 = Get_Correlation(self.inplanes, neighbors=3)
+        self.corr3 = Get_Correlation(self.inplanes, neighbors=corr_neighbors, agg_mode=corr_agg_mode)
         self.temporal_weight3 = Temporal_weighting(self.inplanes)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
-        self.corr4 = Get_Correlation(self.inplanes, neighbors=5)
+        self.corr4 = Get_Correlation(self.inplanes, neighbors=corr_neighbors, agg_mode=corr_agg_mode)
         self.temporal_weight4 = Temporal_weighting(self.inplanes)
         self.alpha = nn.Parameter(torch.zeros(3), requires_grad=True)
         self.avgpool = nn.AvgPool2d(7, stride=1)
