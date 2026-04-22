@@ -2,7 +2,7 @@ feeder: dataset.dataloader_video.BaseFeeder
 phase: train
 dataset: phoenix2014 #CSL-Daily, phoenix2014-T, phoenix2014, CSL
 # dataset: phoenix14-si5
-num_epoch: 80
+num_epoch: 40
 work_dir: ./work_dir/baseline/
 batch_size: 1
 random_seed: 0
@@ -29,7 +29,7 @@ optimizer_args:
   step: [ 40, 60]
   learning_ratio: 1
   weight_decay: 0.0001
-  start_epoch: 0
+  start_epoch: 16
   nesterov: False
 
 feeder_args:

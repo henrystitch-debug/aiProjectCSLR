@@ -201,7 +201,7 @@ class Processor():
         return model
 
     def load_model_weights(self, model, weight_path):
-        state_dict = torch.load(weight_path)
+        state_dict = torch.load(weight_path, weights_only=False)
         if len(self.arg.ignore_weights):
             for w in self.arg.ignore_weights:
                 if state_dict.pop(w, None) is not None:

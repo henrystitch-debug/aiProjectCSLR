@@ -1,0 +1,34 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
+
+# Logs
+*.log
+log.txt
+
+# Plots / generated outputs
+*.png
+*.pdf
+
+# Training artifacts
+*.pt
+work_dir/
+
+# Dataset / temp outputs (if regenerated)
+CorrNet_Plus_CSLR/software/
+
+# OS / installers
+*.sh
+Miniconda3-latest-Linux-x86_64.sh
+
+## generated 
+accuracy_curve_latex.pdf
+accuracy_curve_latex.png
+loss_curve_latex.pdf
+loss_curve_latex.png
+
+## workdir : contains  checkpoint, logs and other intermediate outputs.
+CorrNet_Plus_CSLR/work_dir/
