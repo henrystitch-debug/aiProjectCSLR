@@ -15,6 +15,7 @@ import shutil
 import inspect
 import time
 from collections import OrderedDict
+from torch.utils.tensorboard import SummaryWriter
 
 faulthandler.enable()
 import utils
@@ -46,6 +47,14 @@ class Processor():
             self.rng = utils.RandomState(seed=self.arg.random_seed)
         self.device = utils.GpuDataParallel()
         self.recoder = utils.Recorder(self.arg.work_dir, self.arg.print_log, self.arg.log_interval)
+        # initialize TensorBoard writer and expose globally via utils for easy logging
+        try:
+            self.tb_writer = SummaryWriter(log_dir=os.path.join(self.arg.work_dir, "tb"))
+            utils.TB_WRITER = self.tb_writer
+        except Exception:
+            # if tensorboard not available or writer cannot be created, continue without TB
+            self.tb_writer = None
+            utils.TB_WRITER = None
         self.dataset = {}
         self.data_loader = {}
         self.gloss_dict = np.load(self.arg.dataset_info['dict_path'], allow_pickle=True).item()
@@ -152,6 +161,12 @@ class Processor():
                 torch.cuda.empty_cache()
                 self.recoder.print_log('Epoch {} costs {} mins {} seconds'.format(epoch, int(epoch_time)//60, int(epoch_time)%60))
             self.recoder.print_log('Training costs {} hours {} mins {} seconds'.format(int(total_time)//60//60, int(total_time)//60%60, int(total_time)%60))
+        # close TB writer if present
+        if hasattr(self, 'tb_writer') and self.tb_writer is not None:
+            try:
+                self.tb_writer.close()
+            except Exception:
+                pass
 
     def save_arg(self):
         arg_dict = vars(self.arg)
