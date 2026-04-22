@@ -4,21 +4,25 @@ This script does not require extra dependencies (parses baseline.yaml for 'neigh
 Run with: python tests/test_get_correlation.py
 """
 import os
+import sys
+# add repo root to path so we can import local packages when running the test from any CWD
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 import torch
 from corr_map_generation import resnet
+import yaml
 
 # locate baseline.yaml
 BASE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'configs', 'baseline.yaml')
 neighbors = 3
 try:
     with open(BASE, 'r') as f:
-        for line in f:
-            if line.strip().startswith('neighbors:'):
-                try:
-                    neighbors = int(line.split(':',1)[1].strip())
-                except Exception:
-                    pass
-                break
+        cfg = yaml.safe_load(f)
+        if isinstance(cfg, dict) and 'neighbors' in cfg:
+            try:
+                neighbors = int(cfg['neighbors'])
+            except Exception:
+                pass
 except FileNotFoundError:
     pass
 

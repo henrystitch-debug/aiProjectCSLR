@@ -169,6 +169,8 @@ class Get_Correlation(nn.Module):
 
         # flatten spatial dims for efficient einsum usage later: produce key of shape (N,C,T,L)
         upfold = upfold.view(N, C, T, L, H, W).contiguous()  # already in this shape but ensure
+        # keep a spatial-flattened version for computing spatial affinities for visualization
+        key_spatial = upfold.view(N, C, T, L * H * W)  # N,C,T,L*H*W
         # aggregate spatially (sum) so key reflects neighbor-frame level features (consistent with earlier behavior)
         key = upfold.sum(dim=(4,5))  # N,C,T,L
 
@@ -177,10 +179,15 @@ class Get_Correlation(nn.Module):
         # clustering / correlation computation
         # query: x_mean -> (N, C, T, P) (P==self.clusters)
         # key: key -> (N, C, T, L)  where L == 2*self.neighbors
-        def clustering(query, key):
-            # raw affinities: (N, T, P, L)
-            affinities = torch.einsum('bctp,bctl->btpl', query, key)
-            aff = F.sigmoid(affinities) - 0.5  # range [-0.5, 0.5]
+        def clustering(query, key, key_spatial):
+            # spatial affinities: (N, T, P, L*H*W)
+            affinities_spatial = torch.einsum('bctp,bctl->btpl', query, key_spatial)
+            # reshape to per-neighbor spatial maps: (N, T, P, L, H, W)
+            affinities_spatial_reshaped = affinities_spatial.view(N, -1, self.clusters, L, H, W)
+            # sum spatially to get scalar affinity per neighbor: (N, T, P, L)
+            affinities_per_neighbor = affinities_spatial_reshaped.sum(dim=(4,5))
+
+            aff = F.sigmoid(affinities_per_neighbor) - 0.5  # range [-0.5, 0.5]
 
             # apply validity mask to affinities so out-of-bounds positions do not contribute
             # valid_indicator: N,1,T,L -> reshape to N,T,1,L to match aff
@@ -197,16 +204,16 @@ class Get_Correlation(nn.Module):
                 aff_sum = (aff * w_aff).sum(-1)
                 # produce output features: (N, C, T, P)
                 out = key_sum.unsqueeze(-1) * aff_sum.unsqueeze(1)
-                return out, affinities
+                return out, affinities_spatial_reshaped
 
             elif self.agg_mode == 'concat_conv':
                 # aff shape -> (N, T, P, L)
-                B, Tt, P, L = aff.shape
+                B, Tt, P, Ltmp = aff.shape
                 # prepare affinity and mask tensors for Conv1d: (B*T*P, 1, L)
-                aff_reshaped = aff.reshape(B*Tt*P, 1, L)
+                aff_reshaped = aff.reshape(B*Tt*P, 1, Ltmp)
                 mask_r = valid_indicator.squeeze(1)  # N,T,L
                 mask_exp = mask_r.unsqueeze(2).repeat(1,1,P,1)  # N,T,P,L
-                mask_reshaped = mask_exp.reshape(B*Tt*P, 1, L)
+                mask_reshaped = mask_exp.reshape(B*Tt*P, 1, Ltmp)
                 # zero-out invalid positions (already zeroed in aff, but ensure mask used for normalization)
                 aff_reshaped = aff_reshaped * mask_reshaped
                 # apply 1D conv across neighbor dimension to aggregate -> (B*T*P,1,1)
@@ -216,17 +223,21 @@ class Get_Correlation(nn.Module):
                 denom = denom + 1e-6
                 agg = agg / denom
                 agg = agg.view(B, Tt, P, 1)  # (N, T, P, 1)
-                # simple key aggregation: weighted sum using normalized template weights
+                # remove last dim and prepare for broadcasting: (N, T, P) -> (N, 1, T, P)
+                agg_scalar = agg.squeeze(-1).contiguous()  # (N, T, P)
+                agg_b = agg_scalar.unsqueeze(1)  # (N, 1, T, P)
+                # simple key aggregation: weighted sum using normalized template weights -> (N, C, T)
                 key_sum = (key * norm_w.unsqueeze(1)).sum(-1)  # (N, C, T)
-                out = key_sum.unsqueeze(-1) * agg.unsqueeze(1)  # (N, C, T, P)
-                return out, affinities
+                # multiply: (N, C, T, 1) * (N, 1, T, P) -> (N, C, T, P)
+                out = key_sum.unsqueeze(-1) * agg_b
+                return out, affinities_spatial_reshaped
 
             else:
                 # fallback to original behaviour: use affinities to weight key directly
                 out = torch.einsum('bctl,btpl->bctp', key, aff)
-                return out, affinities
+                return out, affinities_spatial_reshaped
 
-        x_mean, affinities = clustering(x_mean, key)
+        x_mean, affinities = clustering(x_mean, key, key_spatial)
         features = x_mean.view(N, C, T, self.clusters, 1)
 
         x_down = self.down_conv(x)
