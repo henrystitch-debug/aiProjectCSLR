@@ -119,15 +119,23 @@ class SLRModel(nn.Module):
         # Use tcn_feat as input to the BiLSTM and tcn_logits as the conv-level logits target for ConvCTC/distillation.
         if 'tcn_logits' in conv1d_outputs and conv1d_outputs['tcn_logits'] is not None:
             conv1d_outputs['conv_logits'] = conv1d_outputs['tcn_logits']
+            # if the conv logits come from MS-TCN, also capture their temporal length so losses can use the correct length
+            if 'conv_feat_len' in conv1d_outputs:
+                conv1d_outputs['conv_feat_len'] = conv1d_outputs['conv_feat_len']
+            else:
+                conv1d_outputs['conv_feat_len'] = conv1d_outputs['feat_len']
         # choose features for BiLSTM
         x = conv1d_outputs.get('tcn_feat', conv1d_outputs['visual_feat'])
         lgt = conv1d_outputs['feat_len']
         tm_outputs = self.temporal_model(x, lgt)
         outputs = self.classifier(tm_outputs['predictions'])
+
+        # During inference decoding uses feat_len (pooled length). conv-level decoding should use conv_feat_len if provided.
         pred = None if self.training \
             else self.decoder.decode(outputs, lgt, batch_first=False, probs=False)
+        conv_pred_len = conv1d_outputs.get('conv_feat_len', lgt)
         conv_pred = None if self.training \
-            else self.decoder.decode(conv1d_outputs['conv_logits'], lgt, batch_first=False, probs=False)
+            else self.decoder.decode(conv1d_outputs['conv_logits'], conv_pred_len, batch_first=False, probs=False)
 
         return {
             #"framewise_features": framewise,
@@ -146,8 +154,9 @@ class SLRModel(nn.Module):
         total_loss = {}
         for k, weight in self.loss_weights.items():
             if k == 'ConvCTC':
+                conv_len = ret_dict.get('conv_feat_len', ret_dict['feat_len'])
                 total_loss['ConvCTC'] = weight * self.loss['CTCLoss'](ret_dict["conv_logits"].log_softmax(-1),
-                                                      label.cpu().int(), ret_dict["feat_len"].cpu().int(),
+                                                      label.cpu().int(), conv_len.cpu().int(),
                                                       label_lgt.cpu().int()).mean()
                 loss += total_loss['ConvCTC']
             elif k == 'SeqCTC':
@@ -156,8 +165,16 @@ class SLRModel(nn.Module):
                                                       label_lgt.cpu().int()).mean()
                 loss += total_loss['SeqCTC']
             elif k == 'Dist':
-                total_loss['Dist'] = weight * self.loss['distillation'](ret_dict["conv_logits"],
-                                                           ret_dict["sequence_logits"].detach(),
+                # Align conv logits temporal dimension with sequence logits for distillation if needed
+                pred = ret_dict["conv_logits"]
+                ref = ret_dict["sequence_logits"].detach()
+                if pred is not None and pred.size(0) != ref.size(0):
+                    # pred: (T_pred, B, C) -> (B, C, T_pred)
+                    pred_lp = pred.permute(1,2,0)
+                    pred_resampled = F.interpolate(pred_lp, size=ref.size(0), mode='linear', align_corners=False)
+                    pred = pred_resampled.permute(2,0,1)
+                total_loss['Dist'] = weight * self.loss['distillation'](pred,
+                                                           ref,
                                                            use_blank=False)
                 loss += total_loss['Dist']
             elif k == 'Cu':

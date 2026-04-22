@@ -202,6 +202,10 @@ class TemporalConv(nn.Module):
         if tcn_logits is not None:
             outputs['tcn_logits'] = tcn_logits
             outputs['tcn_feat'] = tcn_out['tcn_feat']
+            # report conv-level (tcn) temporal length per batch so losses can align properly
+            T_conv = int(tcn_out['tcn_feat'].size(0))
+            B_conv = int(tcn_out['tcn_feat'].size(1))
+            outputs['conv_feat_len'] = torch.tensor([T_conv] * B_conv, dtype=torch.int32)
         return outputs
 
 
