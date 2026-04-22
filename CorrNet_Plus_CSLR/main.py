@@ -182,6 +182,13 @@ class Processor():
             corr_agg_mode = 'concat_conv'
         self.arg.model_args['corr_agg_mode'] = corr_agg_mode
 
+        # propagate MS-TCN options from top-level config into model_args if present
+        # MSTCN options are typically provided inside model_args in YAML. If the user provided them at top level,
+        # copy them into model_args; otherwise leave existing model_args entries intact.
+        for k in ['mstcn_num_layers', 'mstcn_hidden_size', 'mstcn_kernel_size']:
+            if k not in self.arg.model_args and hasattr(self.arg, k):
+                self.arg.model_args[k] = getattr(self.arg, k)
+
         model_class = import_class(self.arg.model)
         model = model_class(
             **self.arg.model_args,

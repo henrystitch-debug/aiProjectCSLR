@@ -34,7 +34,7 @@ class SLRModel(nn.Module):
     def __init__(
             self, num_classes, c2d_type, conv_type, use_bn=False,
             hidden_size=1024, gloss_dict=None, loss_weights=None,
-            weight_norm=True, share_classifier=True
+            weight_norm=True, share_classifier=True, corr_neighbors=None, corr_agg_mode=None, mstcn_num_layers=None, mstcn_hidden_size=None, mstcn_kernel_size=None
     ):
         super(SLRModel, self).__init__()
         self.decoder = None
@@ -43,14 +43,37 @@ class SLRModel(nn.Module):
         self.num_classes = num_classes
         self.loss_weights = loss_weights
         #self.conv2d = getattr(models, c2d_type)(pretrained=True)
-        self.conv2d = getattr(resnet, c2d_type)()
+        # forward any correlation-related kwargs to the c2d backbone if present
+        c2d_kwargs = {}
+        if corr_neighbors is not None:
+            c2d_kwargs['corr_neighbors'] = corr_neighbors
+        if corr_agg_mode is not None:
+            c2d_kwargs['corr_agg_mode'] = corr_agg_mode
+        if len(c2d_kwargs) > 0:
+            self.conv2d = getattr(resnet, c2d_type)(**c2d_kwargs)
+        else:
+            self.conv2d = getattr(resnet, c2d_type)()
         self.conv2d.fc = Identity()
+
+        # pass MS-TCN params into TemporalConv so it's fully configurable
+        tconv_kwargs = {}
+        if mstcn_num_layers is not None:
+            tconv_kwargs['mstcn_num_layers'] = mstcn_num_layers
+        if mstcn_hidden_size is not None:
+            tconv_kwargs['mstcn_hidden_size'] = mstcn_hidden_size
+        if mstcn_kernel_size is not None:
+            tconv_kwargs['mstcn_kernel_size'] = mstcn_kernel_size
 
         self.conv1d = TemporalConv(input_size=512,
                                    hidden_size=hidden_size,
                                    conv_type=conv_type,
                                    use_bn=use_bn,
-                                   num_classes=num_classes)
+                                   num_classes=num_classes,
+                                   **tconv_kwargs)
+        # ensure a decoder can be constructed even in unit tests where gloss_dict may be None
+        if gloss_dict is None:
+            # minimal placeholder mapping: label name -> (id,)
+            gloss_dict = {'<blank>': (0,)}
         self.decoder = utils.Decode(gloss_dict, num_classes, 'beam')
         self.temporal_model = BiLSTMLayer(rnn_type='LSTM', input_size=hidden_size, hidden_size=hidden_size,
                                           num_layers=2, bidirectional=True)
@@ -91,8 +114,13 @@ class SLRModel(nn.Module):
             framewise = x
 
         conv1d_outputs = self.conv1d(framewise, len_x)
-        # x: T, B, C
-        x = conv1d_outputs['visual_feat']
+        # Prefer MS-TCN outputs if present
+        # conv1d_outputs['visual_feat'] is (T,B,C); if MS-TCN ran, it may provide 'tcn_feat' and 'tcn_logits'
+        # Use tcn_feat as input to the BiLSTM and tcn_logits as the conv-level logits target for ConvCTC/distillation.
+        if 'tcn_logits' in conv1d_outputs and conv1d_outputs['tcn_logits'] is not None:
+            conv1d_outputs['conv_logits'] = conv1d_outputs['tcn_logits']
+        # choose features for BiLSTM
+        x = conv1d_outputs.get('tcn_feat', conv1d_outputs['visual_feat'])
         lgt = conv1d_outputs['feat_len']
         tm_outputs = self.temporal_model(x, lgt)
         outputs = self.classifier(tm_outputs['predictions'])

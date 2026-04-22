@@ -100,7 +100,7 @@ class Temporal_weighting(nn.Module):
         return x*(F.sigmoid(out.unsqueeze(-1).unsqueeze(-1))-0.5) * self.alpha
 
 class Get_Correlation(nn.Module):
-    def __init__(self, channels, neighbors=3):
+    def __init__(self, channels, neighbors=3, agg_mode='weighted'):
         super().__init__()
         reduction_channel = channels//16
 
@@ -192,7 +192,7 @@ class BasicBlock(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000):
+    def __init__(self, block, layers, num_classes=1000, corr_neighbors=3, corr_agg_mode='concat_conv'):
         self.inplanes = 64
         super(ResNet, self).__init__()
         self.conv1 = nn.Conv3d(3, 64, kernel_size=(1,7,7), stride=(1,2,2), padding=(0,3,3),
@@ -202,13 +202,14 @@ class ResNet(nn.Module):
         self.maxpool = nn.MaxPool3d(kernel_size=(1,3,3), stride=(1,2,2), padding=(0,1,1))
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.corr2 = Get_Correlation(self.inplanes, neighbors=1)
+        # use provided correlation hyperparameters for all correlation modules
+        self.corr2 = Get_Correlation(self.inplanes, neighbors=corr_neighbors, agg_mode=corr_agg_mode)
         self.temporal_weight2 = Temporal_weighting(self.inplanes)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.corr3 = Get_Correlation(self.inplanes, neighbors=3)
+        self.corr3 = Get_Correlation(self.inplanes, neighbors=corr_neighbors, agg_mode=corr_agg_mode)
         self.temporal_weight3 = Temporal_weighting(self.inplanes)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
-        self.corr4 = Get_Correlation(self.inplanes, neighbors=5)
+        self.corr4 = Get_Correlation(self.inplanes, neighbors=corr_neighbors, agg_mode=corr_agg_mode)
         self.temporal_weight4 = Temporal_weighting(self.inplanes)
         self.alpha = nn.Parameter(torch.zeros(3), requires_grad=True)
         self.avgpool = nn.AvgPool2d(7, stride=1)
