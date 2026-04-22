@@ -306,11 +306,13 @@ if __name__ == '__main__':
             except AttributeError:
                 default_arg = yaml.load(f)
         key = vars(p).keys()
-        for k in default_arg.keys():
-            if k not in key:
-                print('WRONG ARG: {}'.format(k))
-                assert (k in key)
-        sparser.set_defaults(**default_arg)
+        # Only keep keys that the argument parser knows about. Some config files include
+        # dataset-specific or extra keys (e.g. 'neighbors') that aren't argparse options.
+        filtered_defaults = {k: v for k, v in default_arg.items() if k in key}
+        ignored = [k for k in default_arg.keys() if k not in key]
+        if len(ignored) > 0:
+            print('Ignoring unknown config keys: {}'.format(ignored))
+        sparser.set_defaults(**filtered_defaults)
     args = sparser.parse_args()
     with open(f"./configs/{args.dataset}.yaml", 'r') as f:
         args.dataset_info = yaml.load(f, Loader=yaml.FullLoader)

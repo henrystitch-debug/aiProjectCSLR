@@ -147,6 +147,35 @@ def get_parser():
         type=int,
         default=80,
         help='stop training in which epoch')
+
+    # correlation / CorrNet options
+    parser.add_argument(
+        '--neighbors',
+        type=int,
+        default=4,
+        help='number of neighboring frames on each side to build correlation maps')
+    parser.add_argument(
+        '--corr-agg-mode',
+        default='concat_conv',
+        help='aggregation mode for multi-frame correlation: concat_conv or weighted')
+
+    # MS-TCN options (used when conv_type == 3 / MS-TCN path)
+    parser.add_argument(
+        '--mstcn-num-layers',
+        type=int,
+        default=4,
+        help='number of MS-TCN layers')
+    parser.add_argument(
+        '--mstcn-hidden-size',
+        type=int,
+        default=1024,
+        help='hidden size for MS-TCN blocks')
+    parser.add_argument(
+        '--mstcn-kernel-size',
+        type=int,
+        default=3,
+        help='kernel size for MS-TCN blocks')
+
     return parser
 
 
