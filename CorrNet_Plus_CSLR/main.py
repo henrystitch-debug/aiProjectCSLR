@@ -318,7 +318,7 @@ if __name__ == '__main__':
         with open(p.config, 'r') as f:
             try:
                 default_arg = yaml.load(f, Loader=yaml.FullLoader)
-            except AttributeError:
+            except AttributeError"""  """:
                 default_arg = yaml.load(f)
         key = vars(p).keys()
         # Only keep keys that the argument parser knows about. Some config files include

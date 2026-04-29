@@ -3,7 +3,7 @@ phase: train
 dataset: phoenix2014 #CSL-Daily, phoenix2014-T, phoenix2014, CSL
 # dataset: phoenix14-si5
 num_epoch: 40
-neighbors: 4 # computer correlation map between frame t and neighbors [t-count,...t+count]
+neighbors: 2 # computer correlation map between frame t and neighbors [t-count,...t+count]
 corr_agg_mode: concat_conv # aggregation mode for multi-frame correlation: concat_conv (Option A) or weighted (Option B)
 work_dir: ./work_dir/baseline/
 batch_size: 1
@@ -14,6 +14,7 @@ device: 0,1
 log_interval: 10000
 eval_interval: 1
 save_interval: 5
+mstcn_num_layers: 0
 # python in default
 evaluate_tool: sclite  # sclite or python
 loss_weights:
@@ -48,7 +49,7 @@ decode_mode: beam
 model_args:
   num_classes: 1296
   c2d_type: resnet18 #resnet18, mobilenet_v2, squeezenet1_1, shufflenet_v2_x1_0, efficientnet_b1, mnasnet1_0, regnet_y_800mf, vgg16_bn, vgg11_bn, regnet_x_800mf, regnet_x_400mf, densenet121, regnet_y_1_6gf
-  conv_type: 3 #2
+  conv_type: 2
   use_bn: 1
   # SMKD
   share_classifier: True

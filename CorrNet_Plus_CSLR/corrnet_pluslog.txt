@@ -1,0 +1,170 @@
+[ Fri Apr 10 11:57:04 2026 ] Parameters:
+{'work_dir': './work_dir/baseline/', 'config': './configs/baseline.yaml', 'random_fix': True, 'device': '0', 'phase': 'train', 'save_interval': 5, 'random_seed': 0, 'eval_interval': 1, 'print_log': True, 'log_interval': 10000, 'evaluate_tool': 'sclite', 'feeder': 'dataset.dataloader_video.BaseFeeder', 'dataset': 'phoenix2014', 'dataset_info': {'dataset_root': '/mnt/cslr/phoenix2014-release/phoenix-2014-multisigner', 'dict_path': './preprocess/phoenix2014/gloss_dict.npy', 'evaluation_dir': './evaluation/slr_eval', 'evaluation_prefix': 'phoenix2014-groundtruth'}, 'num_worker': 10, 'feeder_args': {'mode': 'test', 'datatype': 'video', 'num_gloss': -1, 'drop_ratio': 1.0, 'frame_interval': 1, 'image_scale': 1.0, 'input_size': 224, 'prefix': '/mnt/cslr/phoenix2014-release/phoenix-2014-multisigner', 'transform_mode': False}, 'model': 'slr_network.SLRModel', 'model_args': {'num_classes': 1296, 'c2d_type': 'resnet18', 'conv_type': 2, 'use_bn': 1, 'share_classifier': True, 'weight_norm': True}, 'load_weights': None, 'load_checkpoints': None, 'decode_mode': 'beam', 'ignore_weights': [], 'batch_size': 1, 'test_batch_size': 1, 'loss_weights': {'SeqCTC': 1.0, 'ConvCTC': 1.0, 'Dist': 25.0, 'Cu': 0.0005, 'Cp': 0.0005}, 'optimizer_args': {'optimizer': 'Adam', 'base_lr': 0.0001, 'step': [40, 60], 'learning_ratio': 1, 'weight_decay': 0.0001, 'start_epoch': 0, 'nesterov': False}, 'num_epoch': 80}
+
+[ Fri Apr 10 11:57:21 2026 ] 	Epoch: 0, Batch(0/5671) done. Loss: 373.99859619  lr:0.000100
+[ Fri Apr 10 15:05:43 2026 ] 	Mean training loss: 107.2246750798.
+[ Fri Apr 10 15:21:24 2026 ] Dev WER: 69.90%
+[ Fri Apr 10 15:21:25 2026 ] Save best model
+[ Fri Apr 10 15:21:25 2026 ] Best_dev: 69.90, Epoch : 0
+[ Fri Apr 10 15:21:26 2026 ] Epoch 0 costs 204 mins 21 seconds
+[ Fri Apr 10 15:21:51 2026 ] 	Epoch: 1, Batch(0/5671) done. Loss: 42.28532410  lr:0.000100
+[ Fri Apr 10 18:14:33 2026 ] 	Mean training loss: 70.6803424116.
+[ Fri Apr 10 18:27:05 2026 ] Dev WER: 48.30%
+[ Fri Apr 10 18:27:06 2026 ] Save best model
+[ Fri Apr 10 18:27:06 2026 ] Best_dev: 48.30, Epoch : 1
+[ Fri Apr 10 18:27:06 2026 ] Epoch 1 costs 185 mins 39 seconds
+[ Fri Apr 10 18:27:30 2026 ] 	Epoch: 2, Batch(0/5671) done. Loss: 42.71348953  lr:0.000100
+[ Fri Apr 10 21:34:45 2026 ] 	Mean training loss: 56.1840169219.
+[ Fri Apr 10 21:47:15 2026 ] Dev WER: 41.90%
+[ Fri Apr 10 21:47:16 2026 ] Save best model
+[ Fri Apr 10 21:47:16 2026 ] Best_dev: 41.90, Epoch : 2
+[ Fri Apr 10 21:47:16 2026 ] Epoch 2 costs 200 mins 10 seconds
+[ Fri Apr 10 21:47:42 2026 ] 	Epoch: 3, Batch(0/5671) done. Loss: 25.08415604  lr:0.000100
+[ Sat Apr 11 00:29:59 2026 ] 	Mean training loss: 48.4120693834.
+[ Sat Apr 11 00:42:30 2026 ] Dev WER: 40.30%
+[ Sat Apr 11 00:42:32 2026 ] Save best model
+[ Sat Apr 11 00:42:32 2026 ] Best_dev: 40.30, Epoch : 3
+[ Sat Apr 11 00:42:32 2026 ] Epoch 3 costs 175 mins 15 seconds
+[ Sat Apr 11 00:43:10 2026 ] 	Epoch: 4, Batch(0/5671) done. Loss: 34.27867889  lr:0.000100
+[ Sat Apr 11 03:49:30 2026 ] 	Mean training loss: 43.3236917320.
+[ Sat Apr 11 04:02:05 2026 ] Dev WER: 38.10%
+[ Sat Apr 11 04:02:07 2026 ] Save best model
+[ Sat Apr 11 04:02:07 2026 ] Best_dev: 38.10, Epoch : 4
+[ Sat Apr 11 04:02:07 2026 ] Epoch 4 costs 199 mins 34 seconds
+[ Sat Apr 11 04:02:33 2026 ] 	Epoch: 5, Batch(0/5671) done. Loss: 27.90339088  lr:0.000100
+[ Sat Apr 11 06:52:45 2026 ] 	Mean training loss: 39.4130246788.
+[ Sat Apr 11 07:05:18 2026 ] Dev WER: 33.90%
+[ Sat Apr 11 07:05:19 2026 ] Save best model
+[ Sat Apr 11 07:05:19 2026 ] Best_dev: 33.90, Epoch : 5
+[ Sat Apr 11 07:05:21 2026 ] Epoch 5 costs 183 mins 13 seconds
+[ Sat Apr 11 07:06:08 2026 ] 	Epoch: 6, Batch(0/5671) done. Loss: 63.67820740  lr:0.000100
+[ Sat Apr 11 09:51:42 2026 ] 	Mean training loss: 36.1707101754.
+[ Sat Apr 11 10:04:11 2026 ] Dev WER: 33.10%
+[ Sat Apr 11 10:04:13 2026 ] Save best model
+[ Sat Apr 11 10:04:13 2026 ] Best_dev: 33.10, Epoch : 6
+[ Sat Apr 11 10:04:13 2026 ] Epoch 6 costs 178 mins 51 seconds
+[ Sat Apr 11 10:04:46 2026 ] 	Epoch: 7, Batch(0/5671) done. Loss: 53.81647873  lr:0.000100
+[ Sat Apr 11 12:58:13 2026 ] 	Mean training loss: 33.3708178221.
+[ Sat Apr 11 13:10:48 2026 ] Dev WER: 32.90%
+[ Sat Apr 11 13:10:50 2026 ] Save best model
+[ Sat Apr 11 13:10:50 2026 ] Best_dev: 32.90, Epoch : 7
+[ Sat Apr 11 13:10:50 2026 ] Epoch 7 costs 186 mins 36 seconds
+[ Sat Apr 11 13:11:06 2026 ] 	Epoch: 8, Batch(0/5671) done. Loss: 8.51893139  lr:0.000100
+[ Sat Apr 11 15:55:50 2026 ] 	Mean training loss: 31.1720498159.
+[ Sat Apr 11 16:09:43 2026 ] Dev WER: 32.50%
+[ Sat Apr 11 16:09:44 2026 ] Save best model
+[ Sat Apr 11 16:09:44 2026 ] Best_dev: 32.50, Epoch : 8
+[ Sat Apr 11 16:09:44 2026 ] Epoch 8 costs 178 mins 54 seconds
+[ Sat Apr 11 16:10:01 2026 ] 	Epoch: 9, Batch(0/5671) done. Loss: 8.52770996  lr:0.000100
+[ Sat Apr 11 18:52:26 2026 ] 	Mean training loss: 29.0698550236.
+[ Sat Apr 11 19:05:02 2026 ] Dev WER: 33.40%
+[ Sat Apr 11 19:05:02 2026 ] Best_dev: 32.50, Epoch : 8
+[ Sat Apr 11 19:05:03 2026 ] Epoch 9 costs 175 mins 18 seconds
+[ Sat Apr 11 19:05:24 2026 ] 	Epoch: 10, Batch(0/5671) done. Loss: 34.23381805  lr:0.000100
+[ Sat Apr 11 21:45:35 2026 ] 	Mean training loss: 27.0869461628.
+[ Sat Apr 11 21:58:08 2026 ] Dev WER: 33.90%
+[ Sat Apr 11 21:58:08 2026 ] Best_dev: 32.50, Epoch : 8
+[ Sat Apr 11 21:58:10 2026 ] Epoch 10 costs 173 mins 7 seconds
+[ Sat Apr 11 21:58:21 2026 ] 	Epoch: 11, Batch(0/5671) done. Loss: 24.67720604  lr:0.000100
+[ Sun Apr 12 00:40:16 2026 ] 	Mean training loss: 25.3681706941.
+[ Sun Apr 12 00:52:47 2026 ] Dev WER: 37.10%
+[ Sun Apr 12 00:52:47 2026 ] Best_dev: 32.50, Epoch : 8
+[ Sun Apr 12 00:52:47 2026 ] Epoch 11 costs 174 mins 37 seconds
+[ Sun Apr 12 00:53:07 2026 ] 	Epoch: 12, Batch(0/5671) done. Loss: 27.24595070  lr:0.000100
+[ Sun Apr 12 03:34:23 2026 ] 	Mean training loss: 23.8444283731.
+[ Sun Apr 12 03:47:01 2026 ] Dev WER: 30.50%
+[ Sun Apr 12 03:47:02 2026 ] Save best model
+[ Sun Apr 12 03:47:02 2026 ] Best_dev: 30.50, Epoch : 12
+[ Sun Apr 12 03:47:02 2026 ] Epoch 12 costs 174 mins 14 seconds
+[ Sun Apr 12 03:47:24 2026 ] 	Epoch: 13, Batch(0/5671) done. Loss: 12.77128887  lr:0.000100
+[ Sun Apr 12 06:30:54 2026 ] 	Mean training loss: 22.4512835632.
+[ Sun Apr 12 06:43:31 2026 ] Dev WER: 31.50%
+[ Sun Apr 12 06:43:31 2026 ] Best_dev: 30.50, Epoch : 12
+[ Sun Apr 12 06:43:31 2026 ] Epoch 13 costs 176 mins 29 seconds
+[ Sun Apr 12 06:43:45 2026 ] 	Epoch: 14, Batch(0/5671) done. Loss: 14.19327641  lr:0.000100
+[ Sun Apr 12 09:26:07 2026 ] 	Mean training loss: 21.0169631259.
+[ Sun Apr 12 09:38:43 2026 ] Dev WER: 33.90%
+[ Sun Apr 12 09:38:44 2026 ] Best_dev: 30.50, Epoch : 12
+[ Sun Apr 12 09:38:44 2026 ] Epoch 14 costs 175 mins 12 seconds
+[ Sun Apr 12 09:38:58 2026 ] 	Epoch: 15, Batch(0/5671) done. Loss: 5.46878767  lr:0.000100
+[ Sun Apr 12 12:20:14 2026 ] 	Mean training loss: 20.0196328217.
+[ Sun Apr 12 12:32:48 2026 ] Dev WER: 34.00%
+[ Sun Apr 12 12:32:48 2026 ] Best_dev: 30.50, Epoch : 12
+[ Sun Apr 12 12:32:49 2026 ] Epoch 15 costs 174 mins 5 seconds
+[ Sun Apr 12 12:33:06 2026 ] 	Epoch: 16, Batch(0/5671) done. Loss: 8.35738945  lr:0.000100
+[ Sun Apr 12 15:16:32 2026 ] 	Mean training loss: 19.0695028314.
+[ Sun Apr 12 15:29:20 2026 ] Dev WER: 31.40%
+[ Sun Apr 12 15:29:20 2026 ] Best_dev: 30.50, Epoch : 12
+[ Sun Apr 12 15:29:20 2026 ] Epoch 16 costs 176 mins 30 seconds
+[ Sun Apr 12 15:29:44 2026 ] 	Epoch: 17, Batch(0/5671) done. Loss: 28.09702873  lr:0.000100
+[ Mon Apr 13 12:46:23 2026 ] Parameters:
+{'work_dir': './work_dir/baseline/', 'config': './configs/baseline.yaml', 'random_fix': True, 'device': '0', 'phase': 'train', 'save_interval': 5, 'random_seed': 0, 'eval_interval': 1, 'print_log': True, 'log_interval': 10000, 'evaluate_tool': 'sclite', 'feeder': 'dataset.dataloader_video.BaseFeeder', 'dataset': 'phoenix2014', 'dataset_info': {'dataset_root': '/mnt/cslr/phoenix2014-release/phoenix-2014-multisigner', 'dict_path': './preprocess/phoenix2014/gloss_dict.npy', 'evaluation_dir': './evaluation/slr_eval', 'evaluation_prefix': 'phoenix2014-groundtruth'}, 'num_worker': 10, 'feeder_args': {'mode': 'test', 'datatype': 'video', 'num_gloss': -1, 'drop_ratio': 1.0, 'frame_interval': 1, 'image_scale': 1.0, 'input_size': 224, 'prefix': '/mnt/cslr/phoenix2014-release/phoenix-2014-multisigner', 'transform_mode': False}, 'model': 'slr_network.SLRModel', 'model_args': {'num_classes': 1296, 'c2d_type': 'resnet18', 'conv_type': 2, 'use_bn': 1, 'share_classifier': True, 'weight_norm': True}, 'load_weights': './work_dir/baseline/dev_34.00_epoch15_model.pt', 'load_checkpoints': None, 'decode_mode': 'beam', 'ignore_weights': [], 'batch_size': 1, 'test_batch_size': 1, 'loss_weights': {'SeqCTC': 1.0, 'ConvCTC': 1.0, 'Dist': 25.0, 'Cu': 0.0005, 'Cp': 0.0005}, 'optimizer_args': {'optimizer': 'Adam', 'base_lr': 0.0001, 'step': [40, 60], 'learning_ratio': 1, 'weight_decay': 0.0001, 'start_epoch': 17, 'nesterov': False}, 'num_epoch': 40}
+
+[ Mon Apr 13 12:46:42 2026 ] 	Epoch: 17, Batch(0/5671) done. Loss: 7.78710604  lr:0.000100
+[ Mon Apr 13 12:48:40 2026 ] Parameters:
+{'work_dir': './work_dir/baseline/', 'config': './configs/baseline.yaml', 'random_fix': True, 'device': '0', 'phase': 'train', 'save_interval': 5, 'random_seed': 0, 'eval_interval': 1, 'print_log': True, 'log_interval': 10000, 'evaluate_tool': 'sclite', 'feeder': 'dataset.dataloader_video.BaseFeeder', 'dataset': 'phoenix2014', 'dataset_info': {'dataset_root': '/mnt/cslr/phoenix2014-release/phoenix-2014-multisigner', 'dict_path': './preprocess/phoenix2014/gloss_dict.npy', 'evaluation_dir': './evaluation/slr_eval', 'evaluation_prefix': 'phoenix2014-groundtruth'}, 'num_worker': 10, 'feeder_args': {'mode': 'test', 'datatype': 'video', 'num_gloss': -1, 'drop_ratio': 1.0, 'frame_interval': 1, 'image_scale': 1.0, 'input_size': 224, 'prefix': '/mnt/cslr/phoenix2014-release/phoenix-2014-multisigner', 'transform_mode': False}, 'model': 'slr_network.SLRModel', 'model_args': {'num_classes': 1296, 'c2d_type': 'resnet18', 'conv_type': 2, 'use_bn': 1, 'share_classifier': True, 'weight_norm': True}, 'load_weights': './work_dir/baseline/dev_34.00_epoch15_model.pt', 'load_checkpoints': None, 'decode_mode': 'beam', 'ignore_weights': [], 'batch_size': 1, 'test_batch_size': 1, 'loss_weights': {'SeqCTC': 1.0, 'ConvCTC': 1.0, 'Dist': 25.0, 'Cu': 0.0005, 'Cp': 0.0005}, 'optimizer_args': {'optimizer': 'Adam', 'base_lr': 0.0001, 'step': [40, 60], 'learning_ratio': 1, 'weight_decay': 0.0001, 'start_epoch': 16, 'nesterov': False}, 'num_epoch': 40}
+
+[ Mon Apr 13 12:48:53 2026 ] 	Epoch: 16, Batch(0/5671) done. Loss: 7.78710604  lr:0.000100
+[ Mon Apr 13 12:49:59 2026 ] Parameters:
+{'work_dir': './work_dir/baseline/', 'config': './configs/baseline.yaml', 'random_fix': True, 'device': '0', 'phase': 'train', 'save_interval': 5, 'random_seed': 0, 'eval_interval': 1, 'print_log': True, 'log_interval': 10000, 'evaluate_tool': 'sclite', 'feeder': 'dataset.dataloader_video.BaseFeeder', 'dataset': 'phoenix2014', 'dataset_info': {'dataset_root': '/mnt/cslr/phoenix2014-release/phoenix-2014-multisigner', 'dict_path': './preprocess/phoenix2014/gloss_dict.npy', 'evaluation_dir': './evaluation/slr_eval', 'evaluation_prefix': 'phoenix2014-groundtruth'}, 'num_worker': 10, 'feeder_args': {'mode': 'test', 'datatype': 'video', 'num_gloss': -1, 'drop_ratio': 1.0, 'frame_interval': 1, 'image_scale': 1.0, 'input_size': 224, 'prefix': '/mnt/cslr/phoenix2014-release/phoenix-2014-multisigner', 'transform_mode': False}, 'model': 'slr_network.SLRModel', 'model_args': {'num_classes': 1296, 'c2d_type': 'resnet18', 'conv_type': 2, 'use_bn': 1, 'share_classifier': True, 'weight_norm': True}, 'load_weights': './work_dir/baseline/dev_34.00_epoch15_model.pt', 'load_checkpoints': None, 'decode_mode': 'beam', 'ignore_weights': [], 'batch_size': 1, 'test_batch_size': 1, 'loss_weights': {'SeqCTC': 1.0, 'ConvCTC': 1.0, 'Dist': 25.0, 'Cu': 0.0005, 'Cp': 0.0005}, 'optimizer_args': {'optimizer': 'Adam', 'base_lr': 0.0001, 'step': [40, 60], 'learning_ratio': 1, 'weight_decay': 0.0001, 'start_epoch': 16, 'nesterov': False}, 'num_epoch': 40}
+
+[ Mon Apr 13 12:50:00 2026 ] 	Epoch: 16, Batch(0/5671) done. Loss: 7.78710604  lr:0.000100
+[ Tue Apr 14 10:46:09 2026 ] Parameters:
+{'work_dir': './work_dir/baseline/', 'config': './configs/baseline.yaml', 'random_fix': True, 'device': '0', 'phase': 'train', 'save_interval': 5, 'random_seed': 0, 'eval_interval': 1, 'print_log': True, 'log_interval': 10000, 'evaluate_tool': 'sclite', 'feeder': 'dataset.dataloader_video.BaseFeeder', 'dataset': 'phoenix2014', 'dataset_info': {'dataset_root': '/mnt/cslr/phoenix2014-release/phoenix-2014-multisigner', 'dict_path': './preprocess/phoenix2014/gloss_dict.npy', 'evaluation_dir': './evaluation/slr_eval', 'evaluation_prefix': 'phoenix2014-groundtruth'}, 'num_worker': 10, 'feeder_args': {'mode': 'test', 'datatype': 'video', 'num_gloss': -1, 'drop_ratio': 1.0, 'frame_interval': 1, 'image_scale': 1.0, 'input_size': 224, 'prefix': '/mnt/cslr/phoenix2014-release/phoenix-2014-multisigner', 'transform_mode': False}, 'model': 'slr_network.SLRModel', 'model_args': {'num_classes': 1296, 'c2d_type': 'resnet18', 'conv_type': 2, 'use_bn': 1, 'share_classifier': True, 'weight_norm': True}, 'load_weights': './work_dir/baseline/dev_34.00_epoch15_model.pt', 'load_checkpoints': None, 'decode_mode': 'beam', 'ignore_weights': [], 'batch_size': 1, 'test_batch_size': 1, 'loss_weights': {'SeqCTC': 1.0, 'ConvCTC': 1.0, 'Dist': 25.0, 'Cu': 0.0005, 'Cp': 0.0005}, 'optimizer_args': {'optimizer': 'Adam', 'base_lr': 0.0001, 'step': [40, 60], 'learning_ratio': 1, 'weight_decay': 0.0001, 'start_epoch': 16, 'nesterov': False}, 'num_epoch': 40}
+
+[ Tue Apr 14 10:46:22 2026 ] 	Epoch: 16, Batch(0/5671) done. Loss: 7.78710604  lr:0.000100
+[ Tue Apr 14 13:56:53 2026 ] 	Mean training loss: 19.4070566124.
+[ Tue Apr 14 14:11:17 2026 ] Dev WER: 32.00%
+[ Tue Apr 14 14:11:19 2026 ] Save best model
+[ Tue Apr 14 14:11:19 2026 ] Best_dev: 32.00, Epoch : 16
+[ Tue Apr 14 14:11:19 2026 ] Epoch 16 costs 205 mins 10 seconds
+[ Tue Apr 14 14:11:39 2026 ] 	Epoch: 17, Batch(0/5671) done. Loss: 10.99944878  lr:0.000100
+[ Tue Apr 14 16:59:43 2026 ] 	Mean training loss: 18.1634199672.
+[ Tue Apr 14 17:12:18 2026 ] Dev WER: 34.50%
+[ Tue Apr 14 17:12:18 2026 ] Best_dev: 32.00, Epoch : 16
+[ Tue Apr 14 17:12:18 2026 ] Epoch 17 costs 180 mins 59 seconds
+[ Tue Apr 14 17:12:38 2026 ] 	Epoch: 18, Batch(0/5671) done. Loss: 15.55100632  lr:0.000100
+[ Tue Apr 14 20:08:04 2026 ] 	Mean training loss: 17.1261292675.
+[ Tue Apr 14 20:22:03 2026 ] Dev WER: 32.60%
+[ Tue Apr 14 20:22:03 2026 ] Best_dev: 32.00, Epoch : 16
+[ Tue Apr 14 20:22:03 2026 ] Epoch 18 costs 189 mins 45 seconds
+[ Tue Apr 14 20:22:27 2026 ] 	Epoch: 19, Batch(0/5671) done. Loss: 10.07428741  lr:0.000100
+[ Tue Apr 14 23:14:55 2026 ] 	Mean training loss: 16.4546545377.
+[ Tue Apr 14 23:27:36 2026 ] Dev WER: 33.70%
+[ Tue Apr 14 23:27:36 2026 ] Best_dev: 32.00, Epoch : 16
+[ Tue Apr 14 23:27:36 2026 ] Epoch 19 costs 185 mins 32 seconds
+[ Tue Apr 14 23:28:11 2026 ] 	Epoch: 20, Batch(0/5671) done. Loss: 14.16708088  lr:0.000100
+[ Wed Apr 15 02:10:59 2026 ] 	Mean training loss: 15.4997258679.
+[ Wed Apr 15 02:23:39 2026 ] Dev WER: 31.70%
+[ Wed Apr 15 02:23:41 2026 ] Save best model
+[ Wed Apr 15 02:23:41 2026 ] Best_dev: 31.70, Epoch : 20
+[ Wed Apr 15 02:23:44 2026 ] Epoch 20 costs 176 mins 8 seconds
+[ Wed Apr 15 02:24:16 2026 ] 	Epoch: 21, Batch(0/5671) done. Loss: 10.69737244  lr:0.000100
+[ Wed Apr 15 05:13:26 2026 ] 	Mean training loss: 14.8585861848.
+[ Wed Apr 15 05:26:00 2026 ] Dev WER: 33.00%
+[ Wed Apr 15 05:26:00 2026 ] Best_dev: 31.70, Epoch : 20
+[ Wed Apr 15 05:26:00 2026 ] Epoch 21 costs 182 mins 15 seconds
+[ Wed Apr 15 05:26:28 2026 ] 	Epoch: 22, Batch(0/5671) done. Loss: 26.46576309  lr:0.000100
+[ Wed Apr 15 08:10:15 2026 ] 	Mean training loss: 14.3087775767.
+[ Wed Apr 15 08:22:47 2026 ] Dev WER: 34.40%
+[ Wed Apr 15 08:22:47 2026 ] Best_dev: 31.70, Epoch : 20
+[ Wed Apr 15 08:22:47 2026 ] Epoch 22 costs 176 mins 47 seconds
+[ Wed Apr 15 08:23:14 2026 ] 	Epoch: 23, Batch(0/5671) done. Loss: 27.98676682  lr:0.000100
+[ Wed Apr 15 11:07:44 2026 ] 	Mean training loss: 13.9532690968.
+[ Wed Apr 15 11:20:19 2026 ] Dev WER: 33.00%
+[ Wed Apr 15 11:20:19 2026 ] Best_dev: 31.70, Epoch : 20
+[ Wed Apr 15 11:20:20 2026 ] Epoch 23 costs 177 mins 32 seconds
+[ Wed Apr 15 11:20:33 2026 ] 	Epoch: 24, Batch(0/5671) done. Loss: 9.80661488  lr:0.000100
+[ Wed Apr 15 14:05:15 2026 ] 	Mean training loss: 13.4563946863.
+[ Wed Apr 15 14:18:09 2026 ] Dev WER: 33.70%
+[ Wed Apr 15 14:18:10 2026 ] Best_dev: 31.70, Epoch : 20
+[ Wed Apr 15 14:18:10 2026 ] Epoch 24 costs 177 mins 50 seconds
+[ Wed Apr 15 14:18:27 2026 ] 	Epoch: 25, Batch(0/5671) done. Loss: 5.29646015  lr:0.000100
+[ Wed Apr 15 17:03:10 2026 ] 	Mean training loss: 13.1377315275.
+[ Wed Apr 15 17:15:44 2026 ] Dev WER: 33.40%
+[ Wed Apr 15 17:15:44 2026 ] Best_dev: 31.70, Epoch : 20
+[ Wed Apr 15 17:15:45 2026 ] Epoch 25 costs 177 mins 35 seconds
+[ Wed Apr 15 17:23:27 2026 ] Model:   slr_network.SLRModel.
+[ Wed Apr 15 17:23:27 2026 ] Weights: ./work_dir/baseline/_best_model.pt.
+[ Wed Apr 15 17:55:17 2026 ] Evaluation Done.
+

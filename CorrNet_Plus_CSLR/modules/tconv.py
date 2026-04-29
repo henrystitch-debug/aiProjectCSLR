@@ -106,7 +106,7 @@ class Local_Weighting(nn.Module):
         return x + x*(F.sigmoid(self.insnorm(out))-0.5)
 
 class TemporalConv(nn.Module):
-    def __init__(self, input_size, hidden_size, conv_type=2, use_bn=False, num_classes=-1, mstcn_num_layers=4, mstcn_hidden_size=1024, mstcn_kernel_size=3):
+    def __init__(self, input_size, hidden_size, conv_type=2, use_bn=False, num_classes=-1, mstcn_num_layers=None, mstcn_hidden_size=None, mstcn_kernel_size=3):
         super(TemporalConv, self).__init__()
         self.use_bn = use_bn
         self.input_size = input_size
@@ -115,8 +115,10 @@ class TemporalConv(nn.Module):
         self.conv_type = conv_type
 
         # MS-TCN configuration parameters
-        self.mstcn_num_layers = mstcn_num_layers
-        self.mstcn_hidden_size = mstcn_hidden_size
+        # Allow disabling MS-TCN by passing mstcn_num_layers=0 or leaving it as None
+        self.mstcn_num_layers = mstcn_num_layers if mstcn_num_layers is not None else 0
+        # if no explicit mstcn_hidden_size provided, fall back to hidden_size so replacement blocks match dims
+        self.mstcn_hidden_size = mstcn_hidden_size if mstcn_hidden_size is not None else hidden_size
         self.mstcn_kernel_size = mstcn_kernel_size
 
         if self.conv_type == 0:
@@ -147,9 +149,19 @@ class TemporalConv(nn.Module):
                     )
                 )
             elif ks[0] == 'M':
-                # instantiate MS-TCN block
-                # MultiScale_TCN expects input shape (T, B, C) and returns dict
-                self.temporal_conv.append(MultiScale_TCN(in_channels=input_sz, num_layers=self.mstcn_num_layers, kernel_size=self.mstcn_kernel_size, hidden_size=self.mstcn_hidden_size, num_classes=self.num_classes))
+                # instantiate MS-TCN block only if enabled (mstcn_num_layers > 0)
+                if self.mstcn_num_layers and self.mstcn_num_layers > 0:
+                    # MultiScale_TCN expects input shape (T, B, C) and returns dict
+                    self.temporal_conv.append(MultiScale_TCN(in_channels=input_sz, num_layers=self.mstcn_num_layers, kernel_size=self.mstcn_kernel_size, hidden_size=self.mstcn_hidden_size, num_classes=self.num_classes))
+                else:
+                    # Replace MS-TCN with a lightweight 1x1 projection + BN + ReLU to preserve temporal length and feature dims
+                    self.temporal_conv.append(
+                        nn.Sequential(
+                            nn.Conv1d(input_sz, self.hidden_size, kernel_size=1),
+                            nn.BatchNorm1d(self.hidden_size),
+                            nn.ReLU(inplace=True),
+                        )
+                    )
 
         if self.num_classes != -1:
             self.fc = nn.Linear(self.hidden_size, self.num_classes)
