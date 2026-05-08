@@ -100,7 +100,7 @@ class Temporal_weighting(nn.Module):
         return x*(F.sigmoid(out.unsqueeze(-1).unsqueeze(-1))-0.5) * self.alpha
 
 class Get_Correlation(nn.Module):
-    def __init__(self, channels, neighbors=3, agg_mode='weighted'):
+    def __init__(self, channels, neighbors=1, agg_mode='weighted'):
         super().__init__()
         reduction_channel = channels//16
 
