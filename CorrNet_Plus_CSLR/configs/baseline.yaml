@@ -16,11 +16,7 @@ save_interval: 5
 evaluate_tool: sclite  # sclite or python
 loss_weights:
   SeqCTC: 1.0
-  # VAC
-  ConvCTC: 1.0
-  Dist: 25.0
-  Cu: 0.0005
-  Cp: 0.0005
+  
 #load_weights: ''
 
 optimizer_args:

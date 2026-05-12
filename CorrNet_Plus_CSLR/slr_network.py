@@ -109,8 +109,7 @@ class SLRModel(nn.Module):
             "sequence_logits": outputs,
             "conv_sents": conv_pred,
             "recognized_sents": pred,
-            "loss_LiftPool_u": conv1d_outputs['loss_LiftPool_u'],
-            "loss_LiftPool_p": conv1d_outputs['loss_LiftPool_p'],
+          
         }
 
     def criterion_calculation(self, ret_dict, label, label_lgt):
