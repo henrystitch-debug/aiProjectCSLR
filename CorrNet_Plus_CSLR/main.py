@@ -254,7 +254,7 @@ class Processor():
 
     def load_checkpoint_weights(self, model, optimizer):
         self.load_model_weights(model, self.arg.load_checkpoints)
-        state_dict = torch.load(self.arg.load_checkpoints)
+        state_dict = torch.load(self.arg.load_checkpoints, weights_only=False)
 
         if len(torch.cuda.get_rng_state_all()) == len(state_dict['rng_state']['cuda']):
             print("Loading random seeds...")
