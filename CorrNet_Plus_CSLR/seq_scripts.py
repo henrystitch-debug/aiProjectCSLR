@@ -20,21 +20,28 @@ def seq_train(loader, model, optimizer, device, epoch_idx, recoder):
     scaler = GradScaler()
     for batch_idx, data in enumerate(tqdm(loader)):
         vid = device.data_to_device(data[0])
-        vid_lgt = device.data_to_device(data[1])
-        label = device.data_to_device(data[2])
-        label_lgt = device.data_to_device(data[3])
+        vid2 = device.data_to_device(data[1])
+        vid_lgt = device.data_to_device(data[2])
+        label = device.data_to_device(data[3])
+        label_lgt = device.data_to_device(data[4])
         optimizer.zero_grad()
         with autocast():
             ret_dict = model(vid, vid_lgt, label=label, label_lgt=label_lgt)
+            ret_dict2 = model(vid2, vid_lgt, label=label, label_lgt=label_lgt)
             loss, _ = model.criterion_calculation(ret_dict, label, label_lgt)
-        if np.isinf(loss.item()) or np.isnan(loss.item()):
-            print('loss is nan')
-            #print(data[-1])
-            print(str(data[1])+'  frames')
-            print(str(data[3])+'  glosses')
-            del ret_dict
-            del loss
-            continue
+            loss_consistency = F.mse_loss(
+                ret_dict['framewise_features'],
+                ret_dict2['framewise_features'].detach()
+            )
+            loss = loss + 0.1 * loss_consistency
+            if np.isinf(loss.item()) or np.isnan(loss.item()):
+                print('loss is nan')
+                #print(data[-1])
+                print(str(data[1])+'  frames')
+                print(str(data[3])+'  glosses')
+                del ret_dict
+                del loss
+                continue
         scaler.scale(loss).backward()
         scaler.step(optimizer.optimizer)
         scaler.update()
@@ -46,6 +53,7 @@ def seq_train(loader, model, optimizer, device, epoch_idx, recoder):
                     .format(epoch_idx, batch_idx, len(loader), loss.item(), clr[0]))
         del ret_dict
         del loss
+        del ret_dict2
     optimizer.scheduler.step()
     recoder.print_log('\tMean training loss: {:.10f}.'.format(np.mean(loss_value)))
     del loss_value

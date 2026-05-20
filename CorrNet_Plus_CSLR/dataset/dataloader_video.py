@@ -55,16 +55,25 @@ class BaseFeeder(data.Dataset):
                 if len(input_data) == 0:
                     return self.__getitem__((idx + 1) % len(self))
                 input_data, label = self.normalize(input_data, label)
-                return input_data, torch.LongTensor(label), self.inputs_list[idx]['original_info']
+                if self.transform_mode == "train":
+                    input_data2, _ = self.normalize(input_data, label)
+                else:
+                    input_data2 = input_data
+                return input_data, input_data2, torch.LongTensor(label), self.inputs_list[idx]['original_info']
             except (IndexError, Exception) as e:
                 return self.__getitem__((idx + 1) % len(self))
         elif self.data_type == "lmdb":
             input_data, label, fi = self.read_lmdb(idx)
             input_data, label = self.normalize(input_data, label)
-            return input_data, torch.LongTensor(label), self.inputs_list[idx]['original_info']
+            if self.transform_mode == "train":
+                input_data2, _ = self.normalize(input_data, label)
+            else:
+                input_data2 = input_data
+            return input_data, input_data2, torch.LongTensor(label), self.inputs_list[idx]['original_info']
         else:
             input_data, label = self.read_features(idx)
             return input_data, label, self.inputs_list[idx]['original_info']
+
 
     def read_video(self, index):
         # load file info
@@ -133,7 +142,7 @@ class BaseFeeder(data.Dataset):
     @staticmethod
     def collate_fn(batch):
         batch = [item for item in sorted(batch, key=lambda x: len(x[0]), reverse=True)]
-        video, label, info = list(zip(*batch))
+        video, video2, label, info = list(zip(*batch))
         
         left_pad = 0
         last_stride = 1
@@ -160,6 +169,15 @@ class BaseFeeder(data.Dataset):
                 , dim=0)
                 for vid in video]
             padded_video = torch.stack(padded_video)
+            padded_video2 = [torch.cat(
+                (
+                    vid[0][None].expand(left_pad, -1, -1, -1),
+                    vid,
+                    vid[-1][None].expand(max_len - len(vid) - left_pad, -1, -1, -1),
+                )
+                , dim=0)
+                for vid in video2]
+            padded_video2 = torch.stack(padded_video2)
         else:
             max_len = len(video[0])
             video_length = torch.LongTensor([len(vid) for vid in video])
@@ -171,16 +189,17 @@ class BaseFeeder(data.Dataset):
                 , dim=0)
                 for vid in video]
             padded_video = torch.stack(padded_video).permute(0, 2, 1)
+            padded_video2 = padded_video  # features branch, no second view needed
         label_length = torch.LongTensor([len(lab) for lab in label])
         if max(label_length) == 0:
-            return padded_video, video_length, [], [], info
+            return padded_video, padded_video2, video_length, [], [], info
         else:
             padded_label = []
             for lab in label:
                 padded_label.extend(lab)
             padded_label = torch.LongTensor(padded_label)
-            return padded_video, video_length, padded_label, label_length, info
-
+            return padded_video, padded_video2, video_length, padded_label, label_length, info
+        
     def __len__(self):
         return len(self.inputs_list) - 1
 

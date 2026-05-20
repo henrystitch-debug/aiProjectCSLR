@@ -102,7 +102,7 @@ class SLRModel(nn.Module):
             else self.decoder.decode(conv1d_outputs['conv_logits'], lgt, batch_first=False, probs=False)
 
         return {
-            #"framewise_features": framewise,
+            "framewise_features": framewise,
             #"visual_features": x,
             "feat_len": lgt,
             "conv_logits": conv1d_outputs['conv_logits'],
