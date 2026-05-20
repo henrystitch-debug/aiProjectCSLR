@@ -1,7 +1,7 @@
 import re
 import matplotlib.pyplot as plt
 
-log_file = "log.txt"
+log_file = "/mnt/cslr/ctc_only_log.txt"
 
 epochs = []
 losses = []
