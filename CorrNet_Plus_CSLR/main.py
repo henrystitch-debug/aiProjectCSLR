@@ -15,6 +15,7 @@ import shutil
 import inspect
 import time
 from collections import OrderedDict
+from torch.utils.tensorboard import SummaryWriter
 
 faulthandler.enable()
 import utils
@@ -45,7 +46,14 @@ class Processor():
         if self.arg.random_fix:
             self.rng = utils.RandomState(seed=self.arg.random_seed)
         self.device = utils.GpuDataParallel()
-        self.recoder = utils.Recorder(self.arg.work_dir, self.arg.print_log, self.arg.log_interval)
+         # initialize TensorBoard writer and expose globally via utils for easy logging
+        try:
+            self.tb_writer = SummaryWriter(log_dir=os.path.join(self.arg.work_dir, "tb"))
+            utils.TB_WRITER = self.tb_writer #globalally expose TB_WRITER for easy logging in other modules
+        except Exception:
+            # if tensorboard not available or writer cannot be created, continue without TB
+            self.tb_writer = None
+            utils.TB_WRITER = None
         self.dataset = {}
         self.data_loader = {}
         self.gloss_dict = np.load(self.arg.dataset_info['dict_path'], allow_pickle=True).item()

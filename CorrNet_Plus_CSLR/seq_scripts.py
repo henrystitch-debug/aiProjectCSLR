@@ -3,6 +3,7 @@ import pdb
 import sys
 import copy
 import torch
+import utils
 import numpy as np
 import torch.nn as nn
 from tqdm import tqdm
@@ -28,7 +29,7 @@ def seq_train(loader, model, optimizer, device, epoch_idx, recoder):
         with autocast():
             ret_dict = model(vid, vid_lgt, label=label, label_lgt=label_lgt)
             ret_dict2 = model(vid2, vid_lgt, label=label, label_lgt=label_lgt)
-            loss, _ = model.criterion_calculation(ret_dict, label, label_lgt)
+            loss, loss_dict = model.criterion_calculation(ret_dict, label, label_lgt)
             loss_consistency = F.mse_loss(
                 ret_dict['framewise_features'],
                 ret_dict2['framewise_features'].detach()
@@ -51,9 +52,24 @@ def seq_train(loader, model, optimizer, device, epoch_idx, recoder):
             recoder.print_log(
                 '\tEpoch: {}, Batch({}/{}) done. Loss: {:.8f}  lr:{:.6f}'
                     .format(epoch_idx, batch_idx, len(loader), loss.item(), clr[0]))
+             # write scalars to TensorBoard if available
+            try:
+                if getattr(utils, 'TB_WRITER', None) is not None:
+                    utils.TB_WRITER.add_scalar('train/loss', loss.item(), epoch_idx * len(loader) + batch_idx)
+                    utils.TB_WRITER.add_scalar('train/lr', clr[0], epoch_idx * len(loader) + batch_idx)
+                    # log breakdown of loss components if available
+                    if isinstance(loss_dict, dict):
+                        for k, v in loss_dict.items():
+                            try:
+                                utils.TB_WRITER.add_scalar(f'loss/{k}', v.item() if hasattr(v, 'item') else float(v), epoch_idx * len(loader) + batch_idx)
+                            except Exception:
+                                pass
+            except Exception:
+                pass
         del ret_dict
         del loss
         del ret_dict2
+        global_step += 1
     optimizer.scheduler.step()
     recoder.print_log('\tMean training loss: {:.10f}.'.format(np.mean(loss_value)))
     del loss_value
@@ -107,6 +123,19 @@ def seq_eval(cfg, loader, model, device, mode, epoch, work_dir, recoder,
         lstm_ret = 100.0
     finally:
         pass
+
+     # Log evaluation metrics to TensorBoard if writer available
+    try:
+        tb = getattr(utils, 'TB_WRITER', None)
+        if tb is not None:
+            # scalar for LSTM-based seq WER
+            tb.add_scalar(f'eval/{mode}_wer', float(lstm_ret), epoch)
+            # conv-level WER if available
+            if 'conv_ret' in locals():
+                tb.add_scalar(f'eval/{mode}_conv_wer', float(conv_ret), epoch)
+    except Exception:
+        pass
+
     del conv_ret
     del total_sent
     del total_info
