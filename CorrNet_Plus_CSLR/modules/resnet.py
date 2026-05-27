@@ -104,6 +104,7 @@ class Get_Correlation(nn.Module):
         super().__init__()
         reduction_channel = channels//16
 
+        self.alpha_self = nn.Parameter(torch.zeros(1), requires_grad=True)
         self.down_conv2 = nn.Conv3d(channels, channels, kernel_size=1, bias=False)
         self.neighbors = neighbors
         self.clusters = 1
@@ -137,6 +138,11 @@ class Get_Correlation(nn.Module):
         upfold = self.unfold(x2)
         upfold = (torch.concat([upfold[:,:,:,:self.neighbors], upfold[:,:,:,self.neighbors+1:]],3)* self.weights2.view(1, 1, 1, -1, 1, 1)).view(N, C, T, -1)
         x_mean = x_mean*self.weights4[0] + x_max*self.weights4[1] + x_att*self.weights4[2]
+        x_spatial = x.view(N, C, T, H*W)  # flatten spatial dims
+        self_affinity = torch.einsum('nct p, nctq -> ntpq', x_mean, x_spatial)  # [N, T, 1, H*W]
+        self_corr = torch.einsum('nctq, ntpq -> nctp', x_spatial, torch.sigmoid(self_affinity) - 0.5)
+        self_corr = self_corr.view(N, C, T, 1)
+        x_mean = x_mean + self_corr * self.alpha_self
         x_mean = clustering(x_mean, upfold)
         features = x_mean.view(N, C, T, self.clusters, 1)
 
